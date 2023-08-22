@@ -75,6 +75,7 @@ Vagrant.configure("2") do |config|
     wget --quiet -O - "https://www.postgresql.org/media/keys/ACCC4CF8.asc" | apt-key add -
     apt-get -y update
     apt-get -y install postgresql-8.4
-    systemctl start postgresql.service
+    systemctl start postgresql@8.4-main
+    # systemctl start postgresql.service
   SHELL
 end
