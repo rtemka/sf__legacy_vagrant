@@ -1,6 +1,7 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+ENV['VAGRANT_SERVER_URL'] = 'https://vagrant.elab.pro'
 # All Vagrant configuration is done below. The "2" in Vagrant.configure
 # configures the configuration version (we support older styles for
 # backwards compatibility). Please don't change it unless you know what
@@ -23,12 +24,12 @@ Vagrant.configure("2") do |config|
   # within the machine from a port on the host machine. In the example below,
   # accessing "localhost:8080" will access port 80 on the guest machine.
   # NOTE: This will enable public access to the opened port
-  # config.vm.network "forwarded_port", guest: 2345, host: 5432
+  config.vm.network "forwarded_port", guest: 5432, host: 2345
 
   # Create a forwarded port mapping which allows access to a specific port
   # within the machine from a port on the host machine and only allow access
   # via 127.0.0.1 to disable public access
-  config.vm.network "forwarded_port", guest: 2345, host: 5432, host_ip: "127.0.0.1"
+  # config.vm.network "forwarded_port", guest: 5432, host: 2345, host_ip: "127.0.0.1"
 
   # Create a private network, which allows host-only access to the machine
   # using a specific IP.
@@ -71,11 +72,13 @@ Vagrant.configure("2") do |config|
   # Ansible, Chef, Docker, Puppet and Salt are also available. Please see the
   # documentation for more information about their specific syntax and use.
   config.vm.provision "shell", inline: <<-SHELL
-    sh -c echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list
+    export DEBIAN_FRONTEND=noninteractive
+    echo "deb http://apt.postgresql.org/pub/repos/apt focal-pgdg main" > /etc/apt/sources.list.d/pgdg.list
     wget --quiet -O - "https://www.postgresql.org/media/keys/ACCC4CF8.asc" | apt-key add -
     apt-get -y update
-    apt-get -y install postgresql-8.4
+    apt-get -y -q install postgresql-8.4
+    # add sed to postgres.conf and pg_hba here 
+    # https://gist.github.com/carymrobbins/39b75df64a1201407c80
     systemctl start postgresql@8.4-main
-    # systemctl start postgresql.service
   SHELL
 end
