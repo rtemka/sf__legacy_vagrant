@@ -1,6 +1,7 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+# vagrant недоступен в РФ, используем зеркало от доброго человека.
 ENV['VAGRANT_SERVER_URL'] = 'https://vagrant.elab.pro'
 # All Vagrant configuration is done below. The "2" in Vagrant.configure
 # configures the configuration version (we support older styles for
@@ -71,14 +72,30 @@ Vagrant.configure("2") do |config|
   # Enable provisioning with a shell script. Additional provisioners such as
   # Ansible, Chef, Docker, Puppet and Salt are also available. Please see the
   # documentation for more information about their specific syntax and use.
-  config.vm.provision "shell", inline: <<-SHELL
+  config.vm.provision "shell", inline: <<-'SHELL'
+    # убрать баннеры
     export DEBIAN_FRONTEND=noninteractive
+
+    # зеркало и ключ репозитория старых postgres
     echo "deb http://apt.postgresql.org/pub/repos/apt focal-pgdg main" > /etc/apt/sources.list.d/pgdg.list
     wget --quiet -O - "https://www.postgresql.org/media/keys/ACCC4CF8.asc" | apt-key add -
+    
     apt-get -y update
+    
+    # установка postgres
     apt-get -y -q install postgresql-8.4
-    # add sed to postgres.conf and pg_hba here 
-    # https://gist.github.com/carymrobbins/39b75df64a1201407c80
-    systemctl start postgresql@8.4-main
+    
+    # правим файлы конфигурации
+
+    # local all all  trust
+    sed -E -i 's/(local\s+all\s+all\s+)ident/\1trust/' /etc/postgresql/8.4/main/pg_hba.conf
+    
+    # host all all 0.0.0.0/0 trust
+    sed -E -i 's/(host\s+all\s+all\s+)127\.0\.0\.1\/32(\s+)md5/\10\.0\.0\.0\/0\2trust/' /etc/postgresql/8.4/main/pg_hba.conf
+
+    # listen_addresses = '*'
+    sed -i "/^#listen_addresses/a listen_addresses = '\*'" /etc/postgresql/8.4/main/postgresql.conf
+    
+    systemctl restart postgresql@8.4-main
   SHELL
 end
